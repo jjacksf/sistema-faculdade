@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Veiculos</title>
+    <style>
+        input{
+            border-radius: 20px;
+            border: 1px solid #cccccc;
+            padding: 10px;
+            outline: none;
+            display: block;
+            width: 100%;
+        }
+        .btn{
+            border-radius: 20px;
+        }
+        thead{
+            border-radius: 5px;
+            background-color: #dddddd;
+        }
+        thead > tr > th{
+            font-weight: normal;
+            font-size: 14px;
+            font-style: italic;
+            color: #000000;
+        }
+        body{
+            background-color:#c7cddc!important;
+        }
+    </style>
+</head>
+<body>
+    <script src="./Registro de Veiculos_files/jquery-3.5.1.min.js"></script>
+    <script src="./Registro de Veiculos_files/jquery.inputmask.min.js"></script>
+    <link rel="stylesheet" href="./Registro de Veiculos_files/spectre.min.css">
+    <link rel="stylesheet" href="./Registro de Veiculos_files/spectre-icons.min.css">
+    <br><br>
+    <div class="columns">
+        
+        <div class="col-7 col-ml-auto column">
+            <h2>Lista de Veiculos</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ano de Fabricação</th>
+                        <th>Marca</th>
+                        <th>Placa</th>
+                    </tr>
+                </thead>
+                <tbody id="veiculos"></tbody>
+            </table>
+        </div>
+        <div class="col-4 column">
+            <div class="text-center my-2">Novo Veiculo</div>
+            <form method="POST" style="max-width: 250px;" class="col-mx-auto" id="create">
+                <input type="text" id="marca" name="marca" placeholder="Marca">
+                <input type="number" class="mt-1" min="1900" id="modelo" name="modelo" placeholder="Modelo">
+                <input type="text" id="placa" class="mt-1" placeholder="___-____" name="placa" inputmode="text"><br>
+                <div class="clearfix mt-1 text-center">
+                    <button type="submit" class="btn btn-link btn-sm">Adicionar </button>
+                    <button type="submit" class="btn btn-primary icon icon-check s-circle px-2 py-2"></button>
+                </div>
+            </form>
+            <br>
+            <br>
+            <br>
+            <div class="text-center">Pesquisar</div>
+            <form style="max-width: 250px;" class="col-mx-auto" method="GET">
+                <input type="text" class="mt-2" placeholder="Marca" id="search" name="marca">
+                <small>De:</small>
+                <input type="number" name="de" id="de" style="max-width: 75px; display: inline;" value="1900" min="1900" class="mt-2 mb-1 ml-1" placeholder="YYYY">
+                <small>Até:</small>
+                <input type="number" name="ate" id="ate" style="max-width: 75px; display: inline;" value="2020" min="1900" class="mt-2 mb-1" placeholder="YYYY">
+                <button type="submit" class="btn btn-error btn-sm s-circle"><i class="icon icon-search"></i></button><br>
+                <div class="text-center"><a href="?">Resetar <i class="icon icon-stop"></i></a></div>
+            </form>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function(){
+            $("#placa").inputmask({mask: 'AAA-9999'});
+        })
+        var url = new URL(location.href)
+        if(localStorage.getItem('veiculos')==null){
+            localStorage.setItem('veiculos', JSON.stringify([
+            {
+                marca: 'Renault Logan',
+                modelo: 2020,
+                placa: 'AAA-0000'
+            },{
+                marca: 'Volkswagen Fusca',
+                modelo: 1986,
+                placa: 'BBB-0000'
+            },
+            //...
+            ]))
+        }
+        var all = []
+        function get(){
+                var el = document.getElementById('veiculos')
+                var search = document.getElementById('search')
+                var method = document.getElementById('method')
+                el.innerHTML = ''
+                all = JSON.parse(localStorage.getItem('veiculos'))
+                all  = all.sort((a,b)=>{
+                    if(a.modelo<b.modelo) return -1;
+                    if(a.modelo>b.modelo) return 1;
+                    return 0;
+                })
+                .filter(i=>{
+                    var marca = url.searchParams.get('marca')||""
+                    var de    = parseInt(url.searchParams.get('de'))
+                    var ate   = parseInt(url.searchParams.get('ate'))
+                    var name = i.marca||""
+                    if(marca!=="")
+                        if(name.toLowerCase().indexOf(marca.toLowerCase())>-1) return i;
+                        else return 0;
+                    else if(!isNaN(de)&&!isNaN(ate)){
+                        document.getElementById('de').value = de 
+                        document.getElementById('ate').value = ate
+                        if(i.modelo>=de&&i.modelo<=ate) return i;
+                        else return 0;
+                    }else return i;
+                })
+                for(var i=0; i<all.length;i++){
+                    var veiculo = all[i];
+                    el.innerHTML+=`
+                    <tr class="active">
+                        <td>${veiculo.modelo}</td>
+                        <td>${veiculo.marca}</td>
+                        <td>${veiculo.placa}</td>
+                    </tr>`
+                }
+            }
+            function create(){
+                var el = document.getElementById('create')
+                el.addEventListener('submit', event=>{
+                    event.preventDefault()
+                    var data = {
+                        marca: el.marca.value,
+                        modelo: parseInt(el.modelo.value),
+                        placa: el.placa.value
+                    }
+                    data.modelo = isNaN(data.modelo)? new Date().getFullYear(): data.modelo
+                    if(data.marca!==""&&data.modelo>=1900&&data.placa!==""){
+                        var storage = JSON.parse(localStorage.getItem('veiculos'))
+                        storage.push(data)
+                        localStorage.setItem('veiculos', JSON.stringify(storage))
+                        get()
+                    }
+                })
+            }
+        get()
+        create()
+    </script>
+
+</body></html>
